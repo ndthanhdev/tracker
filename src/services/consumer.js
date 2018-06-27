@@ -5,6 +5,7 @@ const db = require('../db');
 const {createDebugLogger, createDebugLoggerP} = require('../utils');
 const {CONSUMER_STATES} = require('../enums');
 const ContractService = require('@open-bucket/contracts');
+const { pick } = require('ramda');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('consumer-services');
@@ -14,12 +15,12 @@ function create({tier, name, userId}) {
     return db.Consumer.create({tier, name, userId});
 }
 
-function getConsumerByIdAndUserId({id, userId}) {
-    return db.Consumer.findOne({where: {id, userId}});
+function getConsumerByIdAndUserId({ id, userId }) {
+    return db.Consumer.findOne({ where: { id, userId } });
 }
 
 function getConsumerByUserId(userId) {
-    return db.Consumer.findAll({where: {userId}});
+    return db.Consumer.findAll({ where: { userId }, order: [['id', 'ASC']] });
 }
 
 function activateConsumer({consumerId: id}) {
@@ -33,10 +34,23 @@ function onConsumerActivationConfirmedHandler({consumerId: id, consumerContract:
     return db.Consumer.update({contractAddress, state: CONSUMER_STATES.ACTIVE}, {where: {id}});
 }
 
+function updateConsumerByIdAndUserId({ id, userId, newValue }) {
+    const updateAbleFields = ['address'];
+    const fields = Object.keys(pick(updateAbleFields, newValue));
+    return db.Consumer.update(newValue, {
+        // Return affected rows
+        returning: true,
+        where: {
+            id,
+            userId
+        },
+        fields
+    });
+}
+
 module.exports = {
     create,
     getConsumerByIdAndUserId,
     getConsumerByUserId,
-    activateConsumer,
-    onConsumerActivationConfirmedHandler
+    activateConsumerHandler
 };
