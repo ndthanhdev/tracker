@@ -16,57 +16,43 @@ const { getFileByUserIdAndConsumerId } = require('../services/file');
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('routes:consumer');
 
-router.get('/:id', auth(),
-router
-    .get('/:id/files',
-        validate([check('id').not().isEmpty().isNumeric()]),
-        auth(),
-        (request, response, next) => {
-            const { id } = request.params;
-            const userId = request.user.id;
-            return getFileByUserIdAndConsumerId({ consumerId: id, userId })
-                .then(files=>response.status(OK).send(files))
-                .catch(next);
-        })
-    .get('/:id',
-        validate([
-            check('id').not().isEmpty()
-                .isNumeric()]),
-        auth(), (request, response, next) => {
-            const { id } = request.params;
-            const userId = request.user.id;
-            return getConsumerByIdAndUserId({ id, userId })
-                .then(consumer => consumer
-                    ? response.send(consumer)
-                    : response.status(NOT_FOUND).send(`Can't find your consumer with id: ${request.params.id}`))
-                .catch(next);
-        })
-    .get('/', auth(), (request, response, next) =>
-        getConsumerByUserId(request.user.id)
-            .then(consumers => response.send(consumers))
-            .catch(next))
-    .post('/',
-        validate([check('address').trim().not().isEmpty()]),
-        auth(),
-        (request, response, next) => {
-            const { address } = request.body;
-            const userId = request.user.id;
-            return create({ address, userId })
-                .then((data) => response.status(CREATED).send(data))
-                .catch(next);
-        })
-    .put('/:id',
-        validate([
-            check('id').not().isEmpty()
-                .isNumeric()]),
-        auth(), (request, response, next) => {
-            const { id } = request.params;
-            const userId = request.user.id;
-            return updateConsumerByIdAndUserId({ id, userId, newValue: request.body })
-                .then((data) => response.status(OK).send(data[1][0]))
-                .catch(next);
+router.get('/:id',
+    validate([
+        check('id').not().isEmpty()
+            .isNumeric()]),
+    auth(), (request, response, next) => {
+        const { id } = request.params;
+        const userId = request.user.id;
+        return getConsumerByIdAndUserId({ id, userId })
+            .then(consumer => consumer
+                ? response.send(consumer)
+                : response.status(NOT_FOUND).send(`Can't find your consumer with id: ${request.params.id}`))
+            .catch(next);
+    });
 
-        });
+router.get('/:id/files',
+    validate([check('id').not().isEmpty().isNumeric()]),
+    auth(),
+    (request, response, next) => {
+        const { id } = request.params;
+        const userId = request.user.id;
+        return getFileByUserIdAndConsumerId({ consumerId: id, userId })
+            .then(files=>response.status(OK).send(files))
+            .catch(next);
+    });
+    
+router.put('/:id',
+    validate([
+        check('id').not().isEmpty()
+            .isNumeric()]),
+    auth(), (request, response, next) => {
+        const { id } = request.params;
+        const userId = request.user.id;
+        return updateConsumerByIdAndUserId({ id, userId, newValue: request.body })
+            .then((data) => response.status(OK).send(data[1][0])) // get first affected row http://docs.sequelizejs.com/class/lib/model.js~Model.html#static-method-update
+            .catch(next);
+
+    });
 // TODO: make PUT endpoint, user can edit address only when consumer state is INACTIVE
 // User can upgrade consumer Tier
 

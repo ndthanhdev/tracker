@@ -35,7 +35,7 @@ function onConsumerActivationConfirmedHandler({consumerId: id, consumerContract:
 }
 
 function updateConsumerByIdAndUserId({ id, userId, newValue }) {
-    const updateAbleFields = ['address'];
+    const updateAbleFields = ['name'];
     const fields = Object.keys(pick(updateAbleFields, newValue));
     return db.Consumer.update(newValue, {
         // Return affected rows
@@ -52,5 +52,7 @@ module.exports = {
     create,
     getConsumerByIdAndUserId,
     getConsumerByUserId,
-    activateConsumerHandler
+    updateConsumerByIdAndUserId,
+    activateConsumer,
+    onConsumerActivationConfirmedHandler
 };
