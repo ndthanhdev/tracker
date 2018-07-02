@@ -20,7 +20,7 @@ function getConsumerByIdAndUserId({ id, userId }) {
 }
 
 function getConsumerByUserId(userId) {
-    return db.Consumer.findAll({ where: { userId }, order: [['id', 'ASC']] });
+    return db.Consumer.findAll({ where: { userId }, order: [['id', 'ASC']], include: [db.File] });
 }
 
 function activateConsumer({consumerId: id}) {

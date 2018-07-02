@@ -8,15 +8,26 @@ const { check } = require('express-validator/check');
 /**
  * Project imports
  */
-const {createDebugLogger} = require('../utils');
-const {validate, auth} = require('../middlewares');
-const {create, getConsumerByIdAndUserId, getConsumerByUserId, updateConsumerByIdAndUserId} = require('../services/consumer');
+const { createDebugLogger } = require('../utils');
+const { validate, auth } = require('../middlewares');
+const { create, getConsumerByIdAndUserId, getConsumerByUserId, updateConsumerByIdAndUserId } = require('../services/consumer');
+const { getFileByUserIdAndConsumerId } = require('../services/file');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('routes:consumer');
 
 router.get('/:id', auth(),
 router
+    .get('/:id/files',
+        validate([check('id').not().isEmpty().isNumeric()]),
+        auth(),
+        (request, response, next) => {
+            const { id } = request.params;
+            const userId = request.user.id;
+            return getFileByUserIdAndConsumerId({ consumerId: id, userId })
+                .then(files=>response.status(OK).send(files))
+                .catch(next);
+        })
     .get('/:id',
         validate([
             check('id').not().isEmpty()

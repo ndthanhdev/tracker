@@ -4,6 +4,7 @@
 const ContractService = require('@open-bucket/contracts');
 const http = require('http');
 const BPromise = require('bluebird');
+const TrackerServer = require('bittorrent-tracker').Server;
 
 /**
  * Project imports
@@ -21,20 +22,33 @@ const log = createDebugLogger('index');
 function serverListenP(app, port) {
     const server = http.createServer(app);
     return BPromise.promisify(server.listen.bind(server))(port)
-        .then(constant({HttpServer: {state: 'OK', message: `HTTP Server is listening on port: ${port}`}}))
-        .catch(({message}) => ({HttpServer: {state: 'ERROR', message}}));
+        .then(constant({ HttpServer: { state: 'OK', message: `HTTP Server is listening on port: ${port}` } }))
+        .catch(({ message }) => ({ HttpServer: { state: 'ERROR', message } }));
 }
 
 function establishDBConnectionP() {
     return db.sequelize.authenticate()
-        .then(constant({DB: {state: 'OK', message: 'DB connection has been established successfully'}}))
-        .catch(({message}) => ({DB: {state: 'ERROR', message}}));
+        .then(constant({ DB: { state: 'OK', message: 'DB connection has been established successfully' } }))
+        .catch(({ message }) => ({ DB: { state: 'ERROR', message } }));
+}
+
+function torrentTrackerP(port) {
+    const server = new TrackerServer({
+        http: false,
+        udp: false,
+        ws: false
+    });
+    return BPromise.promisify(server.listen.bind(server))(port)
+        .then(constant({ TorrentServer: { state: 'OK', message: `Torrent Server is listening on port: ${port}` } }))
+        .catch(({ message }) => ({ HttpServer: { state: 'ERROR', message } }));
 }
 
 function createStartupTasks() {
     return establishDBConnectionP()
         .then(logP('DB Status: \n'))
         .then(() => serverListenP(app, Configs.PORT))
+        .then(logP('Torrent Server Status: \n'))
+        .then(constant(torrentTrackerP(Configs.TORRENT_PORT)))
         .then(logP('HTTP Server Status: \n'))
         .then(() => ContractService.getConsumerActivatorContractInstanceP())
         .then(instance => {
